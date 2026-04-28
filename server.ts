@@ -60,63 +60,156 @@ async function startServer() {
     }
   });
 
-  // Proxy endpoint for Chrome Extension to analyze a website URL
+  // Proxy endpoint for AI Analysis
   app.post("/api/analyze", async (req, res) => {
     try {
-      const { url } = req.body;
-      if (!url) return res.status(400).json({ error: "URL is required" });
+      let { type, value, title, url } = req.body;
+      
+      // Backward compatibility for Chrome Extension
+      if (url && !value) {
+        value = url;
+        type = 'website';
+      }
+
+      if (!value) return res.status(400).json({ error: "Value is required" });
 
       const ai = getAI();
-      const prompt = `Analyze the following website Terms of Service or Privacy Policy. 
-      URL: ${url}
-      Please use your built-in search grounding to find the terms of service.
+      
+      if (type === 'website') {
+        const prompt = `Analyze the following website Terms of Service or Privacy Policy. 
+        URL: ${value}
+        Please use your built-in search grounding to find the terms of service.
 
-      Your job is to simplify and identify risks for a normal user.
-      Return your response STRICTLY in the requested JSON format.`;
+        Your job is to simplify and identify risks for a normal user.
+        Return your response STRICTLY in the requested JSON format.`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
-        contents: prompt,
-        config: {
-          tools: [{ googleSearch: {} }],
-          toolConfig: { includeServerSideToolInvocations: true },
-          thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              summary: { type: Type.STRING },
-              risk_score: { type: Type.NUMBER },
-              risks: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    title: { type: Type.STRING },
-                    description: { type: Type.STRING },
-                    severity: { type: Type.STRING, enum: ["low", "medium", "high"] }
-                  },
-                  required: ["title", "description", "severity"]
+        const response = await ai.models.generateContent({
+          model: "gemini-3.1-pro-preview",
+          contents: prompt,
+          config: {
+            tools: [{ googleSearch: {} }],
+            toolConfig: { includeServerSideToolInvocations: true },
+            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                summary: { type: Type.STRING },
+                risk_score: { type: Type.NUMBER },
+                risks: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      title: { type: Type.STRING },
+                      description: { type: Type.STRING },
+                      severity: { type: Type.STRING, enum: ["low", "medium", "high"] }
+                    },
+                    required: ["title", "description", "severity"]
+                  }
                 }
-              }
-            },
-            required: ["summary", "risk_score", "risks"]
+              },
+              required: ["summary", "risk_score", "risks"]
+            }
           }
-        }
-      });
+        });
 
-      const parsed = JSON.parse(response.text || "{}");
-      res.json({
-        id: Math.random().toString(36).substring(7),
-        timestamp: Date.now(),
-        type: 'website',
-        title: new URL(url).hostname,
-        url,
-        ...parsed
-      });
+        const parsed = JSON.parse(response.text || "{}");
+        let hostname = value;
+        try { hostname = new URL(value).hostname; } catch(e) {}
+
+        res.json({
+          id: Math.random().toString(36).substring(7),
+          timestamp: Date.now(),
+          type: 'website',
+          title: hostname,
+          url: value,
+          ...parsed
+        });
+      } else {
+        // Contract analysis
+        const prompt = `Analyze the contract below and highlight risky or important clauses.
+        
+        CONTRACT TEXT:
+        ${value}
+
+        Return ONLY JSON.`;
+
+        const response = await ai.models.generateContent({
+          model: "gemini-3.1-pro-preview",
+          contents: prompt,
+          config: {
+            thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                summary: { type: Type.STRING },
+                key_points: { type: Type.ARRAY, items: { type: Type.STRING } },
+                risks: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      clause: { type: Type.STRING },
+                      risk: { type: Type.STRING },
+                      severity: { type: Type.STRING, enum: ["low", "medium", "high"] }
+                    },
+                    required: ["clause", "risk", "severity"]
+                  }
+                }
+              },
+              required: ["summary", "key_points", "risks"]
+            }
+          }
+        });
+
+        const parsed = JSON.parse(response.text || "{}");
+        const risks = parsed.risks.map((r: any) => ({
+          title: r.clause,
+          description: r.risk,
+          severity: r.severity
+        }));
+
+        res.json({
+          id: Math.random().toString(36).substring(7),
+          timestamp: Date.now(),
+          type: 'contract',
+          title: title || "Contract Analysis",
+          summary: parsed.summary,
+          key_points: parsed.key_points,
+          risks,
+          original_text: value
+        });
+      }
     } catch (error) {
       console.error("AI Analysis Error:", error);
-      res.status(500).json({ error: "Analysis failed" });
+      res.status(500).json({ error: error instanceof Error ? error.message : "Analysis failed" });
+    }
+  });
+
+  // Translation endpoint
+  app.post("/api/translate", async (req, res) => {
+    try {
+      const { text, targetLanguage } = req.body;
+      if (!text || !targetLanguage) return res.status(400).json({ error: "Text and targetLanguage are required" });
+
+      const ai = getAI();
+      const prompt = `Translate the following text into ${targetLanguage}. 
+      Keep it simple and natural for everyday understanding.
+      
+      TEXT:
+      ${text}`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: prompt
+      });
+
+      res.json({ translatedText: response.text || text });
+    } catch (error) {
+      console.error("Translation Error:", error);
+      res.status(500).json({ error: "Translation failed" });
     }
   });
 

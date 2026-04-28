@@ -1,17 +1,18 @@
 # How to Install ClauseLens Chrome Extension
 
-Since this extension is in development, you can load it manually into Chrome:
+The ClauseLens extension allows you to analyze any website's legal policies instantly without leaving the page.
 
-1.  **Download/Copy the files** from the `/chrome-extension` folder in this project to your computer.
-    - `manifest.json`
-    - `popup.html`
-    - `popup.js`
-    - (Optional) `icon.png` (You can use any 128x128 image)
-2.  Open Chrome and go to `chrome://extensions/`.
-3.  Enable **Developer mode** (toggle at the top right).
-4.  Click **Load unpacked**.
-5.  Select the folder containing the files you just saved.
-6.  The ClauseLens icon will appear in your extensions list.
+## Installation Steps
 
-## How it works
-When you click "Analyze This Site", the extension detects your current URL and redirects you to the ClauseLens Dashboard, pre-filling the analyzer for immediate results.
+1.  **Download the Extension ZIP**: Click the **"Install Extension"** button in the top right corner of the ClauseLens web app.
+2.  **Extract the ZIP**: Unzip the `clauselens_extension.zip` file to a folder on your computer.
+3.  **Open Chrome Extensions**: Open Chrome and navigate to `chrome://extensions/`.
+4.  **Enable Developer Mode**: Toggle the **"Developer mode"** switch at the top right of the page.
+5.  **Load Unpacked**: Click the **"Load unpacked"** button.
+6.  **Select Folder**: Navigate to and select the folder where you extracted the extension files.
+7.  **Pin ClauseLens**: Click the puzzle icon in Chrome and pin **ClauseLens** to your toolbar for easy access.
+
+## Features
+- **One-Click Analysis**: Detects the current URL and prepares it for analysis.
+- **Seamless Integration**: Connects directly to the ClauseLens Intelligence engine.
+- **Privacy First**: Only reviews public legal text when you request it.
