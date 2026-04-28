@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "ClauseLens",
+  "version": "1.1",
+  "description": "Instantly analyze website terms and privacy policies with AI.",
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
