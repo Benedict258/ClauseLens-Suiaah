@@ -179,9 +179,12 @@ function displayResult(data) {
     const siteName = document.getElementById('siteName');
     const siteDomain = document.getElementById('siteDomain');
     
-    if (data.favicon) {
+    if (data.favicon && data.favicon !== "") {
         siteIcon.src = data.favicon;
         siteIcon.style.display = 'block';
+        siteIcon.onerror = () => {
+            siteIcon.src = 'Clause.png';
+        };
     } else {
         siteIcon.src = 'Clause.png';
     }

@@ -48,8 +48,23 @@ export function ResultView({ result }: ResultViewProps) {
       <div className="flex flex-col md:flex-row gap-12 items-center md:items-start text-center md:text-left">
         <div className="flex-1 space-y-6">
           <div className="flex items-center justify-center md:justify-start gap-3">
-            <div className={`p-2.5 rounded-lg ${scoreBg} border border-white/5`}>
-              {result.type === 'website' ? <Globe className={`h-6 w-6 ${scoreColor}`} /> : <FileText className={`h-6 w-6 ${scoreColor}`} />}
+            <div className={`p-2.5 rounded-lg ${scoreBg} border border-white/5 overflow-hidden flex items-center justify-center w-11 h-11`}>
+              {result.type === 'website' && result.url ? (
+                <img 
+                  src={`https://www.google.com/s2/favicons?domain=${new URL(result.url).hostname}&sz=128`}
+                  alt=""
+                  className="w-6 h-6 object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+              ) : null}
+              {result.type === 'website' ? (
+                <Globe className={cn("h-6 w-6", scoreColor, result.url ? "hidden" : "")} />
+              ) : (
+                <FileText className={`h-6 w-6 ${scoreColor}`} />
+              )}
             </div>
             <span className="text-sm font-bold uppercase tracking-[0.2em] text-white/40">
               {result.type === 'website' ? 'Website Analysis' : 'Contract Analysis'}
