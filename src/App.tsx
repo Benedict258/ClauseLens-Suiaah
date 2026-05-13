@@ -20,6 +20,7 @@ export default function App() {
   const { history, addToHistory, getAnalysis, clearHistory } = useHistory();
 
   React.useEffect(() => {
+    document.title = "ClauseLens | Protecting your Digital FootPrint";
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setIsAuthLoading(false);
